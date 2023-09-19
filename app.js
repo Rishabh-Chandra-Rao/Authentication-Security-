@@ -36,7 +36,8 @@ mongoose.connect("mongodb://0.0.0.0:27017/userDB", {useNewUrlParser: true});
 const userSchema =new mongoose.Schema({
     email:String,
     password:String,
-    googleId:String
+    googleId:String,
+    secret:String
 });
 
 // userSchema.plugin(encrypt, { secret: process.env.SECRET ,encryptedFields: ["password"]});//this will encrypt all the data in DB even if we dont want it hence we need to add field for certain encryption
@@ -106,12 +107,49 @@ app.get("/register",function(req,res){
 });
 
 app.get("/secrets",function(req,res){
+
+    User.find({"secret":{$ne:null}})
+    .then((foundUsers)=>{
+        if (foundUsers) {
+            res.render("secrets",{usersWithSecrets:foundUsers});
+ }
+    }).catch((err)=>{
+                    console.log(err);
+                })
+    
+    // if(req.isAuthenticated()){
+    //     res.render("secrets");
+
+    // }else{
+    //     res.redirect("/login");
+    // }
+});
+
+app.get("/submit",function(req,res){
     if(req.isAuthenticated()){
-        res.render("secrets");
+        res.render("submit");
 
     }else{
         res.redirect("/login");
     }
+})
+
+app.post("/submit",function(req,res){
+    const submittedSecret = req.body.secret ;
+
+    // console.log(req.user.id);
+   
+    User.findById(req.user.id)
+    .then((foundUser)=>{
+        if (foundUser) {
+            foundUser.secret = submittedSecret;
+            foundUser.save()
+              res.redirect("/secrets");
+ }
+    }).catch((err)=>{
+                    console.log(err);
+                })
+    
 });
 
 app.get("/logout",function(req,res){
